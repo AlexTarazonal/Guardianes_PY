@@ -13,6 +13,8 @@ NOMBRES_NIVELES = ['Océano', 'Amazonía', 'Ciudad']
 def siguiente_nivel(nivel_actual):
     return (nivel_actual + 1) % 3
 
+
+
 def jugar_campaña(pantalla):
     pygame.display.set_caption("Modo Campaña - Guardianes del Planeta")
     FPS = 60
@@ -27,6 +29,10 @@ def jugar_campaña(pantalla):
     recogidos, rescatados = 0, 0
     pausado = False
     en_juego = True
+
+    # CONTROL de transición de nivel: umbrales y cuál sigue
+    UMBRALES_NIVEL = [250, 500, 750]
+    umbral_idx = 0  # Controla cuál es el siguiente umbral
 
     while en_juego:
         reloj.tick(FPS)
@@ -118,14 +124,15 @@ def jugar_campaña(pantalla):
         mostrar_contadores(pantalla, recogidos, rescatados)
         mostrar_nivel(pantalla, nivel, NOMBRES_NIVELES[nivel])
 
-        # Cambio de nivel
-        if puntaje > 0 and puntaje in [250, 500, 750]:
+        # ==== CAMBIO DE NIVEL SOLO UNA VEZ POR UMBRAL ====
+        if (umbral_idx < len(UMBRALES_NIVEL) and puntaje >= UMBRALES_NIVEL[umbral_idx]):
             nivel = siguiente_nivel(nivel)
             mensaje = f"Nivel: {NOMBRES_NIVELES[nivel]} — {random.choice(FRASES_EDUCATIVAS)}"
             basuras.clear()
             animales.clear()
             powerups.clear()
             obstaculos.clear()
+            umbral_idx += 1  # PASA al siguiente umbral
             pygame.display.flip()
             pygame.time.wait(1200)
 
@@ -133,14 +140,41 @@ def jugar_campaña(pantalla):
         if puntaje >= 1000:
             pantalla_victoria(pantalla, puntaje, recogidos, rescatados)
             pygame.display.flip()
-            pygame.time.wait(4000)
+            # Espera a que el usuario presione algo
+            esperando = True
+            while esperando:
+                for evento in pygame.event.get():
+                    if evento.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if evento.type == pygame.KEYDOWN:
+                        if evento.key == pygame.K_ESCAPE:
+                            pygame.quit()
+                            sys.exit()
+                        else:
+                            esperando = False  # Continúa (regresa al menú)
+                pygame.time.wait(20)
             return
 
         # Game Over
         if vidas <= 0:
             pantalla_game_over(pantalla, puntaje, recogidos, rescatados, random.choice(FRASES_EDUCATIVAS))
             pygame.display.flip()
-            pygame.time.wait(4000)
+            # Espera a que el usuario presione R o ESC
+            esperando = True
+            while esperando:
+                for evento in pygame.event.get():
+                    if evento.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if evento.type == pygame.KEYDOWN:
+                        if evento.key == pygame.K_r:
+                            return "reiniciar"
+                        if evento.key == pygame.K_ESCAPE:
+                            pygame.quit()
+                            sys.exit()
+                pygame.time.wait(20)
             return
 
         pygame.display.flip()
+        
