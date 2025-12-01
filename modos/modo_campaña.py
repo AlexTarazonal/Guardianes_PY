@@ -1,6 +1,8 @@
+import datetime
 import pygame
 import sys
 import random
+import os
 from nave import Nave
 from objetos import Basura, Animal, PowerUp, Obstaculo
 from mapas import dibujar_fondo
@@ -13,9 +15,23 @@ NOMBRES_NIVELES = ['Océano', 'Amazonía', 'Ciudad']
 def siguiente_nivel(nivel_actual):
     return (nivel_actual + 1) % 3
 
+# === Asegúrate de inicializar el mixer ===
+pygame.mixer.init()
 
+# === Prepara audios con ruta absoluta ===
+RUTA_BASE = os.path.dirname(__file__)
+AUDIO_RUTA = os.path.join(RUTA_BASE, "..", "assets", "audios")
 
-def jugar_campaña(pantalla):
+AUDIOS = [
+    pygame.mixer.Sound(os.path.join(AUDIO_RUTA, "frase1.wav")),
+    pygame.mixer.Sound(os.path.join(AUDIO_RUTA, "frase2.wav")),
+    pygame.mixer.Sound(os.path.join(AUDIO_RUTA, "frase3.wav")),
+    pygame.mixer.Sound(os.path.join(AUDIO_RUTA, "frase4.wav")),
+    pygame.mixer.Sound(os.path.join(AUDIO_RUTA, "frase5.wav")),
+    pygame.mixer.Sound(os.path.join(AUDIO_RUTA, "frase6.wav"))
+]
+
+def jugar_campaña(pantalla, nickname):
     pygame.display.set_caption("Modo Campaña - Guardianes del Planeta")
     FPS = 60
     reloj = pygame.time.Clock()
@@ -30,9 +46,11 @@ def jugar_campaña(pantalla):
     pausado = False
     en_juego = True
 
-    # CONTROL de transición de nivel: umbrales y cuál sigue
     UMBRALES_NIVEL = [250, 500, 750]
-    umbral_idx = 0  # Controla cuál es el siguiente umbral
+    umbral_idx = 0
+
+    tiempo_inicio = pygame.time.get_ticks()
+    audio_reproducido = False
 
     while en_juego:
         reloj.tick(FPS)
@@ -53,7 +71,6 @@ def jugar_campaña(pantalla):
         teclas = pygame.key.get_pressed()
         nave.mover(teclas, ANCHO, ALTO)
 
-        # Generar objetos
         ticks_basura += 1
         ticks_animal += 1
         ticks_power += 1
@@ -65,14 +82,13 @@ def jugar_campaña(pantalla):
         if ticks_animal > max(60, 130 - nivel * 10):
             animales.append(Animal(random.randint(40, ANCHO - 60), -40, nivel))
             ticks_animal = 0
-        if ticks_power > 600:  # PowerUp cada ~10 seg
+        if ticks_power > 600:
             powerups.append(PowerUp(random.randint(50, ANCHO - 50), -40, nivel))
             ticks_power = 0
         if ticks_obstaculo > 280:
             obstaculos.append(Obstaculo(random.randint(40, ANCHO - 50), -40, nivel))
             ticks_obstaculo = 0
 
-        # Basura
         for basura in basuras[:]:
             basura.mover()
             basura.dibujar(pantalla)
@@ -86,7 +102,6 @@ def jugar_campaña(pantalla):
                 vidas -= 1
                 mensaje = "Dejaste pasar basura... -1 vida"
 
-        # Animales
         for animal in animales[:]:
             animal.mover()
             animal.dibujar(pantalla)
@@ -99,7 +114,6 @@ def jugar_campaña(pantalla):
                 animales.remove(animal)
                 mensaje = "Un animal se escapó..."
 
-        # PowerUps
         for power in powerups[:]:
             power.mover()
             power.dibujar(pantalla)
@@ -108,7 +122,6 @@ def jugar_campaña(pantalla):
                 power.activar(nave)
                 mensaje = f"¡Power-up: {power.nombre}!"
 
-        # Obstaculos
         for obstaculo in obstaculos[:]:
             obstaculo.mover()
             obstaculo.dibujar(pantalla)
@@ -124,43 +137,29 @@ def jugar_campaña(pantalla):
         mostrar_contadores(pantalla, recogidos, rescatados)
         mostrar_nivel(pantalla, nivel, NOMBRES_NIVELES[nivel])
 
-        # ==== CAMBIO DE NIVEL SOLO UNA VEZ POR UMBRAL ====
-        if (umbral_idx < len(UMBRALES_NIVEL) and puntaje >= UMBRALES_NIVEL[umbral_idx]):
+        tiempo_actual = pygame.time.get_ticks()
+        if not audio_reproducido and tiempo_actual - tiempo_inicio >= 5000:
+            audio = random.choice(AUDIOS)
+            audio.play()
+            audio_reproducido = True
+
+        if umbral_idx < len(UMBRALES_NIVEL) and puntaje >= UMBRALES_NIVEL[umbral_idx]:
             nivel = siguiente_nivel(nivel)
             mensaje = f"Nivel: {NOMBRES_NIVELES[nivel]} — {random.choice(FRASES_EDUCATIVAS)}"
             basuras.clear()
             animales.clear()
             powerups.clear()
             obstaculos.clear()
-            umbral_idx += 1  # PASA al siguiente umbral
+            umbral_idx += 1
             pygame.display.flip()
             pygame.time.wait(1200)
+            tiempo_inicio = pygame.time.get_ticks()
+            audio_reproducido = False
 
-        # Victoria
         if puntaje >= 1000:
             pantalla_victoria(pantalla, puntaje, recogidos, rescatados)
             pygame.display.flip()
-            # Espera a que el usuario presione algo
-            esperando = True
-            while esperando:
-                for evento in pygame.event.get():
-                    if evento.type == pygame.QUIT:
-                        pygame.quit()
-                        sys.exit()
-                    if evento.type == pygame.KEYDOWN:
-                        if evento.key == pygame.K_ESCAPE:
-                            pygame.quit()
-                            sys.exit()
-                        else:
-                            esperando = False  # Continúa (regresa al menú)
-                pygame.time.wait(20)
-            return
-
-        # Game Over
-        if vidas <= 0:
-            pantalla_game_over(pantalla, puntaje, recogidos, rescatados, random.choice(FRASES_EDUCATIVAS))
-            pygame.display.flip()
-            # Espera a que el usuario presione R o ESC
+            guardar_puntaje(nickname, puntaje)
             esperando = True
             while esperando:
                 for evento in pygame.event.get():
@@ -170,11 +169,32 @@ def jugar_campaña(pantalla):
                     if evento.type == pygame.KEYDOWN:
                         if evento.key == pygame.K_r:
                             return "reiniciar"
-                        if evento.key == pygame.K_ESCAPE:
-                            pygame.quit()
-                            sys.exit()
+                        elif evento.key == pygame.K_ESCAPE:
+                            return "menu"
+                pygame.time.wait(20)
+            return
+
+        if vidas <= 0:
+            pantalla_game_over(pantalla, puntaje, recogidos, rescatados, random.choice(FRASES_EDUCATIVAS))
+            pygame.display.flip()
+            guardar_puntaje(nickname, puntaje)
+            esperando = True
+            while esperando:
+                for evento in pygame.event.get():
+                    if evento.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if evento.type == pygame.KEYDOWN:
+                        if evento.key == pygame.K_r:
+                            return "reiniciar"
+                        elif evento.key == pygame.K_ESCAPE:
+                            return "menu"
                 pygame.time.wait(20)
             return
 
         pygame.display.flip()
-        
+
+def guardar_puntaje(nickname, puntaje):
+    fecha = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open("puntajes.txt", "a") as f:
+        f.write(f"{nickname},{puntaje},{fecha}\n")

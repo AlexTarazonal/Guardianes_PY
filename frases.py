@@ -6,5 +6,17 @@ FRASES_EDUCATIVAS = [
     "Salva animales, protege los océanos.",
     "El planeta es tu hogar, ¡cuídalo!",
     "Reciclar salva vidas, no solo humanas.",
-    "La basura que recoges hoy es vida que salvas mañana."
+    "La basura que recoges hoy es vida que salvas mañana.",
+    "Planta un árbol hoy y respira mejor mañana.",
+    "Menos plástico, más vida marina.",
+    "Usa una botella reutilizable, reduce tu huella.",
+    "Proteger la tierra es protegernos a nosotros mismos.",
+    "No dejes huella, deja un buen ejemplo.",
+    "Ama la naturaleza, respétala y protégela.",
+    "Los animales no producen basura, nosotros sí.",
+    "Consume responsablemente, piensa en el futuro.",
+    "Separar la basura es un acto de amor.",
+    "Un guardián del planeta inspira a otros.",
+    "Cada gota de agua cuenta, no la desperdicies.",
+    "Cuida hoy lo que quieres disfrutar mañana."
 ]

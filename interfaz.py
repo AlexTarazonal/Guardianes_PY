@@ -117,7 +117,8 @@ def dibujar_menu_opciones(pantalla, seleccion, tiempo):
     opciones = [
         {"texto": "🎯 Modo Campaña", "desc": "Aventura progresiva por el Perú"},
         {"texto": "🎮 Modo Libre", "desc": "Juego personalizable infinito"},
-        {"texto": "🎓 Modo Educativo", "desc": "Aprende mientras juegas"}
+        {"texto": "🎓 Modo Educativo", "desc": "Aprende mientras juegas"},
+        {"texto": "🏆 Ranking", "desc": "Ver los mejores puntajes"}
     ]
     
     y_inicio = 280
@@ -148,6 +149,7 @@ def dibujar_menu_opciones(pantalla, seleccion, tiempo):
         desc = fuente_pequena.render(opcion["desc"], True, color_desc)
         rect_desc = desc.get_rect(center=(ancho//2, y_pos + 25))
         pantalla.blit(desc, rect_desc)
+
 
 def dibujar_instrucciones(pantalla):
     """Dibuja las instrucciones de navegación"""

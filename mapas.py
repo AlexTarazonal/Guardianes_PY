@@ -26,20 +26,30 @@ def dibujar_amazonas(pantalla):
         y = random.randint(suelo_y, alto)
         pygame.draw.circle(pantalla, (35, 75, 25), (x, y), random.randint(1, 3))
 
-    # Río serpenteante
-    puntos_rio = []
-    for x in range(0, ancho + 50, int(ancho / 16)):
-        y_offset = int(20 * math.sin(x * 0.01)) + int(alto * 0.65)
-        puntos_rio.append((x, y_offset))
-        puntos_rio.append((x, y_offset + int(alto * 0.08)))
+    # ───────── Río serpenteante (CORREGIDO, sin picos) ─────────
+    base_y = int(alto * 0.64)          # altura base del río
+    altura_rio = int(alto * 0.09)      # grosor del río
+
+    puntos_superior = []
+    puntos_inferior = []
+    paso_x = max(12, int(ancho / 16))
+
+    for x in range(-60, ancho + 80, paso_x):
+        y_top = base_y + int(20 * math.sin(x * 0.01))
+        y_bottom = y_top + altura_rio
+        puntos_superior.append((x, y_top))
+        puntos_inferior.append((x, y_bottom))
+
+    # Primero todo el borde de arriba, luego el de abajo al revés
+    puntos_rio = puntos_superior + list(reversed(puntos_inferior))
     pygame.draw.polygon(pantalla, (25, 140, 200), puntos_rio)
 
     # Reflejos en el agua
     for i in range(0, ancho, int(ancho / 28)):
         pygame.draw.line(
             pantalla, (40, 160, 220),
-            (i, int(alto * 0.67) + int(10 * math.sin(i * 0.02))),
-            (i + int(ancho / 50), int(alto * 0.68) + int(10 * math.sin(i * 0.02))),
+            (i, base_y + int(10 * math.sin(i * 0.02))),
+            (i + int(ancho / 50), base_y + 10 + int(10 * math.sin(i * 0.02))),
             2
         )
 
@@ -100,7 +110,7 @@ def dibujar_amazonas(pantalla):
     for _ in range(6):
         x = random.randint(0, ancho)
         for i in range(0, int(cielo_alto * 0.6), 10):
-            light_color = (150 + i//4, 180 + i//4, 100 + i//4)
+            light_color = (150 + i // 4, 180 + i // 4, 100 + i // 4)
             pygame.draw.line(pantalla, light_color, (x, i), (x + 2, i + 8), 1)
 
 

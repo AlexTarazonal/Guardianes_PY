@@ -1,6 +1,7 @@
 import pygame
 import sys
 import random
+import os
 from nave import Nave
 from objetos import Basura, Animal, PowerUp, Obstaculo
 from mapas import dibujar_fondo
@@ -10,6 +11,22 @@ from preguntas import PREGUNTAS
 
 ANCHO, ALTO = 800, 600
 NOMBRES_NIVELES = ['Océano', 'Amazonía', 'Ciudad']
+
+# === Inicializar mixer ===
+pygame.mixer.init()
+
+# === Ruta y carga de audios ===
+RUTA_BASE = os.path.dirname(__file__)
+AUDIO_RUTA = os.path.join(RUTA_BASE, "..", "assets", "audios")
+
+AUDIOS = [
+    pygame.mixer.Sound(os.path.join(AUDIO_RUTA, "frase1.wav")),
+    pygame.mixer.Sound(os.path.join(AUDIO_RUTA, "frase2.wav")),
+    pygame.mixer.Sound(os.path.join(AUDIO_RUTA, "frase3.wav")),
+    pygame.mixer.Sound(os.path.join(AUDIO_RUTA, "frase4.wav")),
+    pygame.mixer.Sound(os.path.join(AUDIO_RUTA, "frase5.wav")),
+    pygame.mixer.Sound(os.path.join(AUDIO_RUTA, "frase6.wav"))
+]
 
 def jugar_educativo(pantalla):
     nivel = 0  # Puedes permitir elegir
@@ -24,6 +41,9 @@ def jugar_educativo(pantalla):
     recogidos, rescatados = 0, 0
     pausado = False
     en_juego = True
+
+    tiempo_inicio = pygame.time.get_ticks()
+    audio_reproducido = False
 
     while en_juego:
         reloj.tick(FPS)
@@ -44,7 +64,6 @@ def jugar_educativo(pantalla):
         teclas = pygame.key.get_pressed()
         nave.mover(teclas, ANCHO, ALTO)
 
-        # Generar objetos
         ticks_basura += 1
         ticks_animal += 1
         ticks_power += 1
@@ -63,7 +82,6 @@ def jugar_educativo(pantalla):
             obstaculos.append(Obstaculo(random.randint(40, ANCHO - 50), -40, nivel))
             ticks_obstaculo = 0
 
-        # Objetos
         for basura in basuras[:]:
             basura.mover()
             basura.dibujar(pantalla)
@@ -95,7 +113,6 @@ def jugar_educativo(pantalla):
             if nave.rect.colliderect(power.rect):
                 powerups.remove(power)
                 power.activar(nave)
-                # Lanzar trivia:
                 pregunta = random.choice(PREGUNTAS)
                 correcta = mostrar_pregunta(pantalla, pregunta)
                 if correcta:
@@ -118,10 +135,27 @@ def jugar_educativo(pantalla):
         mostrar_contadores(pantalla, recogidos, rescatados)
         mostrar_nivel(pantalla, nivel, NOMBRES_NIVELES[nivel])
 
+        # Reproducir audio educativo a los 5 segundos
+        tiempo_actual = pygame.time.get_ticks()
+        if not audio_reproducido and tiempo_actual - tiempo_inicio >= 5000:
+            audio = random.choice(AUDIOS)
+            audio.play()
+            audio_reproducido = True
+
         if vidas <= 0:
             pantalla_game_over(pantalla, puntaje, recogidos, rescatados, random.choice(FRASES_EDUCATIVAS))
             pygame.display.flip()
-            pygame.time.wait(4000)
+            esperando = True
+            while esperando:
+                for evento in pygame.event.get():
+                    if evento.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if evento.type == pygame.KEYDOWN:
+                        if evento.key == pygame.K_r:
+                            return "reiniciar"
+                        elif evento.key == pygame.K_ESCAPE:
+                            return "menu"
             return
 
         pygame.display.flip()
