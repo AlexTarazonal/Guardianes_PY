@@ -3,13 +3,15 @@ import sys
 import os
 
 from interfaz import (
-    inicializar_interfaz, dibujar_menu_completo, 
-    obtener_dimensiones_pantalla
+    inicializar_interfaz,
+    dibujar_menu_completo,
+    obtener_dimensiones_pantalla,
 )
 from modos.modo_campaña import jugar_campaña
 from modos.modo_libre import jugar_libre
 from modos.modo_educativo import jugar_educativo
-from ranking import mostrar_ranking  # ✅ Importa el ranking
+from ranking import mostrar_ranking
+from opengl_demo import ejecutar_demo_opengl
 
 pygame.init()
 
@@ -27,6 +29,7 @@ ruta_hoja = os.path.join(ruta_base, "assets", "hoja.png")
 hoja_img = pygame.image.load(ruta_hoja).convert_alpha()
 hoja_img = pygame.transform.scale(hoja_img, (64, 64))
 
+
 def dibujar_fondo_degradado():
     for i in range(ALTO):
         r = min(30 + int(i * 0.1), 255)
@@ -34,6 +37,7 @@ def dibujar_fondo_degradado():
         b = min(90 + int(i * 0.3), 255)
         color = (r, g, b)
         pygame.draw.line(pantalla, color, (0, i), (ANCHO, i))
+
 
 def pedir_nickname():
     nickname = ""
@@ -50,16 +54,23 @@ def pedir_nickname():
         pantalla.blit(titulo, (ANCHO // 2 - titulo.get_width() // 2, ALTO // 4 + 20))
 
         instruccion = fuente_input.render("Ingresa tu Nickname:", True, (200, 255, 200))
-        pantalla.blit(instruccion, (ANCHO // 2 - instruccion.get_width() // 2, ALTO // 2 - 80))
+        pantalla.blit(
+            instruccion, (ANCHO // 2 - instruccion.get_width() // 2, ALTO // 2 - 80)
+        )
 
         input_box = pygame.Rect(ANCHO // 2 - 200, ALTO // 2 - 30, 400, 60)
         pygame.draw.rect(pantalla, (255, 255, 255, 50), input_box, border_radius=8)
         pygame.draw.rect(pantalla, (200, 255, 200), input_box, 3, border_radius=8)
 
         texto = fuente_input.render(nickname, True, (0, 255, 0))
-        pantalla.blit(texto, (ANCHO // 2 - texto.get_width() // 2, ALTO // 2 - texto.get_height() // 2))
+        pantalla.blit(
+            texto,
+            (ANCHO // 2 - texto.get_width() // 2, ALTO // 2 - texto.get_height() // 2),
+        )
 
-        tip = pygame.font.SysFont("arial", 20).render("Presiona ENTER para continuar", True, (220, 220, 220))
+        tip = pygame.font.SysFont("arial", 20).render(
+            "Presiona ENTER para continuar", True, (220, 220, 220)
+        )
         pantalla.blit(tip, (ANCHO // 2 - tip.get_width() // 2, ALTO // 2 + 50))
 
         pygame.display.flip()
@@ -80,6 +91,7 @@ def pedir_nickname():
         clock.tick(30)
 
     return nickname
+
 
 def main():
     jugador_nickname = pedir_nickname()
@@ -103,11 +115,12 @@ def main():
                 if evento.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+
                 if evento.type == pygame.KEYDOWN:
                     if evento.key == pygame.K_DOWN:
-                        seleccion = (seleccion + 1) % 4  # ✅ Ahora hay 4 opciones
+                        seleccion = (seleccion + 1) % 5  # 👈 5 opciones
                     elif evento.key == pygame.K_UP:
-                        seleccion = (seleccion - 1) % 4
+                        seleccion = (seleccion - 1) % 5
                     elif evento.key in (pygame.K_RETURN, pygame.K_SPACE):
                         en_menu = False
                     elif evento.key == pygame.K_ESCAPE:
@@ -116,22 +129,35 @@ def main():
 
             clock.tick(60)
 
+        # ───────────────────────────────
         # Ejecutar modo seleccionado
+        # ───────────────────────────────
         if seleccion == 0:
             resultado = jugar_campaña(pantalla, jugador_nickname)
+
         elif seleccion == 1:
             resultado = jugar_libre(pantalla)
+
         elif seleccion == 2:
             resultado = jugar_educativo(pantalla)
+
         elif seleccion == 3:
             mostrar_ranking(pantalla)
             resultado = None
 
-        # Decidir qué hacer después de terminar un modo
+        elif seleccion == 4:
+            ejecutar_demo_opengl()
+            resultado = None
+
+        # ───────────────────────────────
+        # Después de volver de un modo
+        # ───────────────────────────────
         if resultado == "reiniciar":
             continue
         else:
-            pass  # Vuelve al menú principal sin pedir nickname de nuevo
+            # volver al menú sin pedir nickname
+            pass
+
 
 if __name__ == "__main__":
     main()
